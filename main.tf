@@ -209,7 +209,6 @@ resource "aws_elb" "elb" {
 
   subnets = "${var.subnet_ids}"
   idle_timeout = 3600
-  internal = true
   security_groups = flatten([[aws_security_group.rabbitmq_elb.id], var.elb_additional_security_group_ids])
   tags = {
     Name = "${local.cluster_name}"
