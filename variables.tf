@@ -36,7 +36,7 @@ variable "elb_additional_security_group_ids" {
 }
 
 variable "instance_type" {
-  default = "m5.large"
+  default = "t2.small"
 }
 
 variable "instance_volume_type" {

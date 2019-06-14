@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "policy_doc" {
 data "template_file" "cloud-init" {
   template = "${file("${path.module}/cloud-init.yaml")}"
 
-  vars {
+  vars = {
     sync_node_count = 3
     asg_name        = "${local.cluster_name}"
     region          = "${data.aws_region.current.name}"
@@ -102,7 +102,7 @@ resource "aws_security_group" "rabbitmq_elb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "rabbitmq ${var.name} ELB"
   }
 }
@@ -143,7 +143,7 @@ resource "aws_security_group" "rabbitmq_nodes" {
     ]
   }
 
-  tags {
+  tags = {
     Name = "rabbitmq ${var.name} nodes"
   }
 }
@@ -153,7 +153,10 @@ resource "aws_launch_configuration" "rabbitmq" {
   image_id             = "${data.aws_ami_ids.ami.ids[0]}"
   instance_type        = "${var.instance_type}"
   key_name             = "${var.ssh_key_name}"
-  security_groups      = ["${aws_security_group.rabbitmq_nodes.id}", "${var.nodes_additional_security_group_ids}"]
+  security_groups      = flatten( [ [ aws_security_group.rabbitmq_nodes.id ] , var.nodes_additional_security_group_ids ])
+#  security_groups      = ["${aws_security_group.rabbitmq_nodes.id}", "${compact(var.nodes_additional_security_group_ids)}"]
+#  security_groups      = [ "${aws_security_group.rabbitmq_nodes.id}" , "${compact(split(",", ${var.nodes_additional_security_group_ids}))}" ]
+#  security_groups      = [ "${format("%s,%s",aws_security_group.rabbitmq_nodes.id, var.nodes_additional_security_group_ids)}" ]
   iam_instance_profile = "${aws_iam_instance_profile.profile.id}"
   user_data            = "${data.template_file.cloud-init.rendered}"
 
@@ -179,7 +182,7 @@ resource "aws_autoscaling_group" "rabbitmq" {
   force_delete              = true
   launch_configuration      = "${aws_launch_configuration.rabbitmq.name}"
   load_balancers            = ["${aws_elb.elb.name}"]
-  vpc_zone_identifier       = ["${var.subnet_ids}"]
+  vpc_zone_identifier       = "${var.subnet_ids}"
 
   tag {
     key                 = "Name"
@@ -213,12 +216,13 @@ resource "aws_elb" "elb" {
     target              = "TCP:5672"
   }
 
-  subnets         = ["${var.subnet_ids}"]
+  subnets         = "${var.subnet_ids}"
   idle_timeout    = 3600
   internal        = true
-  security_groups = ["${aws_security_group.rabbitmq_elb.id}", "${var.elb_additional_security_group_ids}"]
+  security_groups      = flatten( [ [ aws_security_group.rabbitmq_elb.id ] , var.elb_additional_security_group_ids ])
 
-  tags {
+#  security_groups      = ["${aws_security_group.rabbitmq_elb.id}", "${compact(var.elb_additional_security_group_ids)}"]
+  tags = {
     Name = "${local.cluster_name}"
   }
 }
