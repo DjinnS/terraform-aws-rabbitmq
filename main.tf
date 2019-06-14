@@ -113,6 +113,13 @@ resource "aws_security_group" "rabbitmq_nodes" {
   description = "Security Group for the rabbitmq nodes"
 
   ingress {
+    protocol = -1
+    from_port = 0
+    to_port = 0
+    self = true
+  }
+
+  ingress {
     protocol = "tcp"
     from_port = 5672
     to_port = 5672
