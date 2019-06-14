@@ -154,9 +154,6 @@ resource "aws_launch_configuration" "rabbitmq" {
   instance_type        = "${var.instance_type}"
   key_name             = "${var.ssh_key_name}"
   security_groups      = flatten( [ [ aws_security_group.rabbitmq_nodes.id ] , var.nodes_additional_security_group_ids ])
-#  security_groups      = ["${aws_security_group.rabbitmq_nodes.id}", "${compact(var.nodes_additional_security_group_ids)}"]
-#  security_groups      = [ "${aws_security_group.rabbitmq_nodes.id}" , "${compact(split(",", ${var.nodes_additional_security_group_ids}))}" ]
-#  security_groups      = [ "${format("%s,%s",aws_security_group.rabbitmq_nodes.id, var.nodes_additional_security_group_ids)}" ]
   iam_instance_profile = "${aws_iam_instance_profile.profile.id}"
   user_data            = "${data.template_file.cloud-init.rendered}"
 
@@ -220,8 +217,6 @@ resource "aws_elb" "elb" {
   idle_timeout    = 3600
   internal        = true
   security_groups      = flatten( [ [ aws_security_group.rabbitmq_elb.id ] , var.elb_additional_security_group_ids ])
-
-#  security_groups      = ["${aws_security_group.rabbitmq_elb.id}", "${compact(var.elb_additional_security_group_ids)}"]
   tags = {
     Name = "${local.cluster_name}"
   }
